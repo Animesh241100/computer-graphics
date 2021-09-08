@@ -1,0 +1,1 @@
+g++ Random_Point.cpp -lGL -lGLU -lglut -lGLEW -o RP
