@@ -1,4 +1,4 @@
-// A simple OpenGL program that draws a hexagon.
+// A simple OpenGL program that draws an arc from angle alpha to beta.
 
 #include "GL/freeglut.h"
 #include "GL/gl.h"
@@ -105,43 +105,6 @@ void plot_point(float x, float y) {
     if((!flip_arc && cond1) || (flip_arc && !cond1) || fabs(abs(beta) - 2*PI) <= EPSILON)
         glVertex2i(x, y);
 }
-
-
-// void plot_point(float x, float y) {
-//     float slope = atan2(y, x);
-//     if(slope < 0)
-//         slope += 2*PI;
-//     // if(alpha+beta > 2*PI && slope >= alpha || slope <= alpha+beta-2*PI)
-//     //     glVertex2i(x, y);
-//     // else if(slope >= alpha && slope <= alpha + beta)
-//     //     glVertex2i(x, y);
-//     float min_slope = alpha;
-//     float max_slope = alpha + beta;
-//     if(alpha < 0 && beta > 0) 
-//         min_slope = 2*PI + alpha;
-//     else if(alpha < 0 && beta < 0) {
-//         min_slope = 2*PI + alpha + beta;
-//         max_slope = 2*PI + alpha;
-//     }
-//     else if(alpha > 0 && beta < 0) {
-//         if(alpha+beta > 0)
-//             min_slope = alpha + beta;
-//         else
-//             min_slope = 2*PI + alpha + beta;
-//         max_slope = alpha;
-//     }
-//     // min_slope = min_slope < 0 ? min_slope + 2*PI : min_slope;
-//     // max_slope = max_slope < 0 ? max_slope + 2*PI : max_slope;
-//     // if(min_slope > max_slope)
-//     //     swap(min_slope, max_slope);
-//     if((slope >= min_slope && slope <= max_slope) || (max_slope > 2*PI && slope >= min_slope || slope <= max_slope-2*PI))
-//         glVertex2i(x, y);
-//     else if(min_slope > max_slope && slope <= min_slope && slope >= max_slope)
-//         glVertex2i(x, y);
-//     else
-//         cout << x << " " << y << " " << slope << " " << min_slope << " " << max_slope << endl;
-// }
-
 
 //draws a line from `src` co-ordinate to `dest` co-ordinate
 void draw_line(pair<float,float> src, pair<float,float> dest) {

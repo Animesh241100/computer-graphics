@@ -1,4 +1,4 @@
-// A simple OpenGL program that draws a hexagon.
+// A simple OpenGL program that draws a car.
 
 #include "GL/freeglut.h"
 #include "GL/gl.h"
