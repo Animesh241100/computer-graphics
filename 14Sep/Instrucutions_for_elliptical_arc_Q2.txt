@@ -1,0 +1,18 @@
+Instructions Regarding Execution of Q2 Program
+
+
+1. You can execute as you normally execute other OpenGL Programs.
+2. This Program is a bit weird when we randomly initialize the center of the arc (cx, cy) and the major axis 'rx' and minor axis 'ry'.
+3. By default this program randomly initializes alpha, beta, rx, ry, cx and cy.
+4. This Program shows correct behaviour only if we initialise alpha and beta using rand() function and other values such as cx, cy,
+	rx, ry etc. we can keep hardcoded or take input using cin.
+
+5. You only have to uncomment the lines 53, 54, 55. This will make center as (0, 0) and 800, 500 as major and minor axes respectively.
+6. Doing the Point 5. will ensure that program shows intended behavior in all cases.
+
+
+
+CED18I065
+Animesh Kumar
+ICG Lab Assignment	
+
