@@ -50,9 +50,9 @@ void draw_arc() {
     cout << "Randomly Chosen alpha and beta(in deg): " << alpha << " " << beta << endl;
     alpha = (float)alpha * (PI) / (float)180;
     beta = (float)beta * (PI) / (float)180;
-    // rx = 800;
-    // ry = 500;
-    // cx=0;cy=0;
+    rx = 800;
+    ry = 500;
+    cx=0;cy=0;
     glClearColor(1.0, 1.0, 1.0, 0.4);
     glClear(GL_COLOR_BUFFER_BIT);
     glColor3f(r, g, b);
