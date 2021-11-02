@@ -10,18 +10,20 @@
 #include<unistd.h>
 
 #define PI 3.14159     // Mathematical Constant PI
-#define SIDE 700
+#define SIDE 600
 
 using namespace std;
 
 void draw_image();
-void get_clipped_polygon(vector<pair<int,int>> &polygon, vector<pair<int,int>> window);
-void clip_polygon(vector<pair<int,int>> polygon, pair<int,int> A, pair<int,int> B, vector<pair<int,int>> &clipped_polygon);
+vector<bool> get_clipped_polygon(vector<pair<int,int>> &polygon, vector<pair<int,int>> window);
+vector<bool> clip_polygon(vector<pair<int,int>> polygon, pair<int,int> A, pair<int,int> B, vector<pair<int,int>> &clipped_polygon);
 pair<int,int> get_intersection(pair<int,int>p11, pair<int,int>p12, pair<int,int>p21, pair<int,int>p22);
 vector<pair<int,int>> get_window();
 vector<pair<int,int>> get_polygon_a();
 vector<pair<int,int>> get_polygon_b();
+vector<pair<int,int>> get_polygon_c();
 void draw_polygon(vector<pair<int,int>> P, float r, float g, float b);
+void draw_polygon_weiler(vector<pair<int,int>> P, vector<bool> is_in_out, float r, float g, float b, float r_w, float g_w, float b_w);
 bool is_leftside(pair<int, int> point, pair<int,int> A, pair<int,int> B);
 void print_vec(vector<pair<int,int>> p, string name);
 void get_line_format(pair<int,int> p1, pair<int,int> p2, float &a, float &b, float &c);
@@ -37,7 +39,7 @@ int main(int argc, char **argv) {
     glutInitDisplayMode(GLUT_SINGLE);
     glutInitWindowSize(500, 500);
     glutInitWindowPosition(100, 100);
-    glutCreateWindow("Sutherland Hodgeman Algorithm");
+    glutCreateWindow("Weiler Atherton Algorithm");
     glutDisplayFunc(draw_image);
     glutMainLoop();
     return 0;
@@ -49,24 +51,26 @@ void draw_image() {
     glClear(GL_COLOR_BUFFER_BIT);
     glColor3f(1.0, 0.0, 0.0);
     glOrtho(-1000, 1000, -1000, 1000, -1000, 1000);
-        vector<pair<int,int>> polygon = get_polygon_a();
+        vector<pair<int,int>> polygon = get_polygon_c();
         print_vec(polygon, "Input Polygon");
         vector<pair<int,int>> window = get_window();
-        get_clipped_polygon(polygon, window);
-        print_vec(polygon, "Clipped Polygon");
-        // draw_polygon(polygon, 0.0, 1.0, 0.0);
+        vector<bool> is_in_out = get_clipped_polygon(polygon, window);
+        // print_vec(polygon, "Clipped Polygon");
         draw_polygon(window, 1.0, 0.0, 0.0);
-        draw_polygon(polygon, 0.0, 1.0, 0.0);
+        draw_polygon_weiler(polygon, is_in_out, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0);
+        // draw_polygon(polygon, 0.0, 1.0, 0.0);
     glFlush();
 }
 
-void get_clipped_polygon(vector<pair<int,int>> &polygon, vector<pair<int,int>> window) {
+vector<bool> get_clipped_polygon(vector<pair<int,int>> &polygon, vector<pair<int,int>> window) {
     int i = 0;
+    vector<bool> is_in_out;
     for(i = 0; i < window.size(); i++){ 
         vector<pair<int,int>> clipped_polygon;
-        clip_polygon(polygon, window[i], window[(i+1)%window.size()], clipped_polygon);
+        is_in_out = clip_polygon(polygon, window[i], window[(i+1)%window.size()], clipped_polygon);
         polygon = clipped_polygon;
     }
+    return is_in_out;
 }
 
 void print_vec(vector<pair<int,int>> p, string name) {
@@ -78,23 +82,29 @@ void print_vec(vector<pair<int,int>> p, string name) {
 }
 
 // clips the polygon based on the algorithm
-void clip_polygon(vector<pair<int,int>> polygon, pair<int,int> A, pair<int,int> B, vector<pair<int,int>> &clipped_polygon) {
+vector<bool> clip_polygon(vector<pair<int,int>> polygon, pair<int,int> A, pair<int,int> B, vector<pair<int,int>> &clipped_polygon) {
+    vector<bool> is_in_out;
     for(int i = 0; i < polygon.size(); i++) {
         pair<int,int> intersection;
         bool left1 = is_leftside(polygon[i], A, B); 
         bool left2 = is_leftside(polygon[(i+1)%polygon.size()], A, B);
-        if(left1 && left2)
+        if(left1 && left2) {
+            is_in_out.push_back(false);
             clipped_polygon.push_back(polygon[(i+1)%polygon.size()]);
-        else if(left1 && !left2) {
+        } else if(left1 && !left2) {
+            is_in_out.push_back(true);
             intersection = get_intersection(polygon[i], polygon[(i+1)%polygon.size()], A, B);
             clipped_polygon.push_back(intersection);
         }
         else if(!left1 && left2) {
             intersection = get_intersection(polygon[i], polygon[(i+1)%polygon.size()], A, B);
+            is_in_out.push_back(true);
             clipped_polygon.push_back(intersection);
+            is_in_out.push_back(true);
             clipped_polygon.push_back(polygon[(i+1)%polygon.size()]);
         }
     }
+    return is_in_out;
 }
 
 
@@ -158,10 +168,35 @@ vector<pair<int,int>> get_polygon_b() {
     return P;
 }
 
+// returns a concave polygon to be clipped
+vector<pair<int,int>> get_polygon_c() {
+    vector<pair<int,int>> P;
+    P.push_back({700, -300});
+    P.push_back({700, 300});
+    P.push_back({30, 300});
+    P.push_back({30, 200});
+    P.push_back({650, 200});
+    P.push_back({650, -200});
+    P.push_back({30, -200});
+    P.push_back({30, -300});
+    return P;
+}
+
+
 // draws the polygon P
 void draw_polygon(vector<pair<int,int>> P, float r, float g, float b) {
     glColor3f(r, g, b);
     for(int i = 0; i < P.size(); i++){ 
+        draw_line(P[i], P[(i+1)%P.size()]);
+    }
+}
+
+void draw_polygon_weiler(vector<pair<int,int>> P, vector<bool> is_in_out, float r, float g, float b, float r_w, float g_w, float b_w) {
+    for(int i = 0; i < P.size(); i++){ 
+        if(is_in_out[(i+1)%P.size()])
+            glColor3f(r_w, g_w, b_w);
+        else
+            glColor3f(r, g, b);
         draw_line(P[i], P[(i+1)%P.size()]);
     }
 }
