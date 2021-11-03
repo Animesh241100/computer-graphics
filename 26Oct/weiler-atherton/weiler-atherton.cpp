@@ -1,4 +1,4 @@
-// A simple OpenGL program for doing polygon clipping using sutherland-hodgeman algorithm
+// A simple OpenGL program for doing polygon clipping using weiler-atherton algorithm
 
 #include "GL/freeglut.h"
 #include "GL/gl.h"
@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
     glutInitDisplayMode(GLUT_SINGLE);
     glutInitWindowSize(500, 500);
     glutInitWindowPosition(100, 100);
-    glutCreateWindow("Sutherland Hodgeman Algorithm");
+    glutCreateWindow("Weiler Atherton's Algorithm");
     glutDisplayFunc(draw_image);
     glutMainLoop();
     return 0;

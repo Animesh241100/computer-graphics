@@ -10,7 +10,7 @@
 #include<unistd.h>
 
 #define PI 3.14159     // Mathematical Constant PI
-#define SIDE 700
+#define SIDE 600
 
 using namespace std;
 
