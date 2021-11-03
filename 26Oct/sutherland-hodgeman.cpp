@@ -21,6 +21,7 @@ pair<int,int> get_intersection(pair<int,int>p11, pair<int,int>p12, pair<int,int>
 vector<pair<int,int>> get_window();
 vector<pair<int,int>> get_polygon_a();
 vector<pair<int,int>> get_polygon_b();
+vector<pair<int,int>> get_polygon_c();
 void draw_polygon(vector<pair<int,int>> P, float r, float g, float b);
 bool is_leftside(pair<int, int> point, pair<int,int> A, pair<int,int> B);
 void print_vec(vector<pair<int,int>> p, string name);
@@ -49,7 +50,7 @@ void draw_image() {
     glClear(GL_COLOR_BUFFER_BIT);
     glColor3f(1.0, 0.0, 0.0);
     glOrtho(-1000, 1000, -1000, 1000, -1000, 1000);
-        vector<pair<int,int>> polygon = get_polygon_a();
+        vector<pair<int,int>> polygon = get_polygon_c();
         print_vec(polygon, "Input Polygon");
         vector<pair<int,int>> window = get_window();
         get_clipped_polygon(polygon, window);
@@ -155,6 +156,20 @@ vector<pair<int,int>> get_polygon_b() {
     P.push_back({-SIDE+x_off,0+y_off});
     P.push_back({-SIDE+round(SIDE*cos(PI/3))+x_off,(-1)*round(SIDE*sin(PI/3))+y_off});
     P.push_back({SIDE-round(SIDE*cos(PI/3))+x_off,(-1)*round(SIDE*sin(PI/3))+y_off});
+    return P;
+}
+
+// returns a concave polygon to be clipped
+vector<pair<int,int>> get_polygon_c() {
+    vector<pair<int,int>> P;
+    P.push_back({700, -300});
+    P.push_back({700, 300});
+    P.push_back({30, 300});
+    P.push_back({30, 200});
+    P.push_back({650, 200});
+    P.push_back({650, -200});
+    P.push_back({30, -200});
+    P.push_back({30, -300});
     return P;
 }
 

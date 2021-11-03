@@ -11,19 +11,40 @@
 
 #define PI 3.14159     // Mathematical Constant PI
 #define SIDE 600
+#define INSIDE 1
+#define OUTSIDE 2
+#define IN_OUT 3
+#define OUT_IN 4
+#define NONE 5
 
 using namespace std;
 
+class Vertex {
+  public:
+    int x;
+    int y;
+    int type;
+    Vertex() {
+        x = 0;
+        y = 0;
+        type = NONE; 
+    }
+    Vertex(int x_, int y_, int t_) {
+        x = x_;
+        y = y_;
+        type = t_;
+    }
+};
+
 void draw_image();
-vector<bool> get_clipped_polygon(vector<pair<int,int>> &polygon, vector<pair<int,int>> window);
-vector<bool> clip_polygon(vector<pair<int,int>> polygon, pair<int,int> A, pair<int,int> B, vector<pair<int,int>> &clipped_polygon);
+void get_clipped_polygon(vector<Vertex> &polygon, vector<pair<int,int>> window);
+void clip_polygon(vector<Vertex> polygon, pair<int,int> A, pair<int,int> B, vector<Vertex> &clipped_polygon);
 pair<int,int> get_intersection(pair<int,int>p11, pair<int,int>p12, pair<int,int>p21, pair<int,int>p22);
 vector<pair<int,int>> get_window();
-vector<pair<int,int>> get_polygon_a();
-vector<pair<int,int>> get_polygon_b();
-vector<pair<int,int>> get_polygon_c();
+vector<Vertex> get_polygon_a();
+vector<Vertex> get_polygon_c();
 void draw_polygon(vector<pair<int,int>> P, float r, float g, float b);
-void draw_polygon_weiler(vector<pair<int,int>> P, vector<bool> is_in_out, float r, float g, float b, float r_w, float g_w, float b_w);
+void draw_polygon_weiler(vector<Vertex> P, float r, float g, float b);
 bool is_leftside(pair<int, int> point, pair<int,int> A, pair<int,int> B);
 void print_vec(vector<pair<int,int>> p, string name);
 void get_line_format(pair<int,int> p1, pair<int,int> p2, float &a, float &b, float &c);
@@ -39,7 +60,7 @@ int main(int argc, char **argv) {
     glutInitDisplayMode(GLUT_SINGLE);
     glutInitWindowSize(500, 500);
     glutInitWindowPosition(100, 100);
-    glutCreateWindow("Weiler Atherton Algorithm");
+    glutCreateWindow("Sutherland Hodgeman Algorithm");
     glutDisplayFunc(draw_image);
     glutMainLoop();
     return 0;
@@ -51,60 +72,71 @@ void draw_image() {
     glClear(GL_COLOR_BUFFER_BIT);
     glColor3f(1.0, 0.0, 0.0);
     glOrtho(-1000, 1000, -1000, 1000, -1000, 1000);
-        vector<pair<int,int>> polygon = get_polygon_c();
-        print_vec(polygon, "Input Polygon");
+        vector<Vertex> polygon = get_polygon_c();
+        // print_vec(polygon, "Input Polygon");
         vector<pair<int,int>> window = get_window();
-        vector<bool> is_in_out = get_clipped_polygon(polygon, window);
+        get_clipped_polygon(polygon, window);
         // print_vec(polygon, "Clipped Polygon");
-        draw_polygon(window, 1.0, 0.0, 0.0);
-        draw_polygon_weiler(polygon, is_in_out, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0);
         // draw_polygon(polygon, 0.0, 1.0, 0.0);
+        draw_polygon(window, 1.0, 0.0, 0.0);
+        draw_polygon_weiler(polygon, 0.0, 1.0, 0.0);
     glFlush();
 }
 
-vector<bool> get_clipped_polygon(vector<pair<int,int>> &polygon, vector<pair<int,int>> window) {
+void get_clipped_polygon(vector<Vertex> &polygon, vector<pair<int,int>> window) {
     int i = 0;
-    vector<bool> is_in_out;
     for(i = 0; i < window.size(); i++){ 
-        vector<pair<int,int>> clipped_polygon;
-        is_in_out = clip_polygon(polygon, window[i], window[(i+1)%window.size()], clipped_polygon);
+        vector<Vertex> clipped_polygon;
+        clip_polygon(polygon, window[i], window[(i+1)%window.size()], clipped_polygon);
         polygon = clipped_polygon;
     }
-    return is_in_out;
 }
 
-void print_vec(vector<pair<int,int>> p, string name) {
+void print_vec(vector<Vertex> p, string name) {
     cout << "The " << name << " vector: ";
     for(auto i : p) {
-        cout << "(" << i.first << "," << i.second << "), ";
+        cout << "(" << i.x << "," << i.y << "," << i.type << "), ";
     }
     cout << endl;
 }
 
 // clips the polygon based on the algorithm
-vector<bool> clip_polygon(vector<pair<int,int>> polygon, pair<int,int> A, pair<int,int> B, vector<pair<int,int>> &clipped_polygon) {
-    vector<bool> is_in_out;
+void clip_polygon(vector<Vertex> polygon, pair<int,int> A, pair<int,int> B, vector<Vertex> &clipped_polygon) {
     for(int i = 0; i < polygon.size(); i++) {
-        pair<int,int> intersection;
-        bool left1 = is_leftside(polygon[i], A, B); 
-        bool left2 = is_leftside(polygon[(i+1)%polygon.size()], A, B);
+        Vertex intersection;
+        bool left1 = is_leftside({polygon[i].x, polygon[i].y}, A, B); 
+        bool left2 = is_leftside({polygon[(i+1)%polygon.size()].x, polygon[(i+1)%polygon.size()].y}, A, B);
         if(left1 && left2) {
-            is_in_out.push_back(false);
+            // polygon[(i+1)%polygon.size()].type = INSIDE;
             clipped_polygon.push_back(polygon[(i+1)%polygon.size()]);
-        } else if(left1 && !left2) {
-            is_in_out.push_back(true);
-            intersection = get_intersection(polygon[i], polygon[(i+1)%polygon.size()], A, B);
-            clipped_polygon.push_back(intersection);
+        }
+        else if(left1 && !left2) {
+            bool flag = false;
+            pair<int,int> p = get_intersection({polygon[i].x, polygon[i].y}, {polygon[(i+1)%polygon.size()].x, polygon[(i+1)%polygon.size()].y}, A, B);
+            for(int i = 0; i < clipped_polygon.size();i++) {
+                if(clipped_polygon[i].x == p.first && clipped_polygon[i].y == p.second)
+                    flag = true;
+            }
+            if(!flag) {
+                intersection = Vertex(p.first, p.second, IN_OUT);
+                clipped_polygon.push_back(intersection);
+            }
         }
         else if(!left1 && left2) {
-            intersection = get_intersection(polygon[i], polygon[(i+1)%polygon.size()], A, B);
-            is_in_out.push_back(true);
-            clipped_polygon.push_back(intersection);
-            is_in_out.push_back(true);
+            bool flag = false;
+            pair<int,int> p = get_intersection({polygon[i].x, polygon[i].y}, {polygon[(i+1)%polygon.size()].x, polygon[(i+1)%polygon.size()].y}, A, B);
+            for(int i = 0; i < clipped_polygon.size();i++) {
+                if(clipped_polygon[i].x == p.first && clipped_polygon[i].y == p.second)
+                    flag = true;
+            }
+            if(!flag) {
+                intersection = Vertex(p.first, p.second, OUT_IN);
+                clipped_polygon.push_back(intersection);
+            }
+            // polygon[(i+1)%polygon.size()].type = INSIDE;
             clipped_polygon.push_back(polygon[(i+1)%polygon.size()]);
         }
     }
-    return is_in_out;
 }
 
 
@@ -145,43 +177,28 @@ vector<pair<int,int>> get_window() {
 }
 
 // returns a polygon to be clipped
-vector<pair<int,int>> get_polygon_a() {
-    vector<pair<int,int>> P;
-    P.push_back({500, 500});
-    P.push_back({-500, 500});
-    P.push_back({-500, 0});
-    P.push_back({500, 0});
-    return P;
-}
-
-// returns a polygon to be clipped
-vector<pair<int,int>> get_polygon_b() {
-    int x_off = 400;
-    int y_off = -600;
-    vector<pair<int,int>> P;
-    P.push_back({SIDE+x_off,0+y_off});
-    P.push_back({SIDE-round(SIDE*cos(PI/3))+x_off,round(SIDE*sin(PI/3))+y_off});
-    P.push_back({-SIDE+round(SIDE*cos(PI/3))+x_off,round(SIDE*sin(PI/3))+y_off});
-    P.push_back({-SIDE+x_off,0+y_off});
-    P.push_back({-SIDE+round(SIDE*cos(PI/3))+x_off,(-1)*round(SIDE*sin(PI/3))+y_off});
-    P.push_back({SIDE-round(SIDE*cos(PI/3))+x_off,(-1)*round(SIDE*sin(PI/3))+y_off});
+vector<Vertex> get_polygon_a() {
+    vector<Vertex> P;
+    P.push_back(Vertex(500, 500, NONE));
+    P.push_back(Vertex(-500, 500, NONE));
+    P.push_back(Vertex(-500, 0, NONE));
+    P.push_back(Vertex(500, 0, NONE));
     return P;
 }
 
 // returns a concave polygon to be clipped
-vector<pair<int,int>> get_polygon_c() {
-    vector<pair<int,int>> P;
-    P.push_back({700, -300});
-    P.push_back({700, 300});
-    P.push_back({30, 300});
-    P.push_back({30, 200});
-    P.push_back({650, 200});
-    P.push_back({650, -200});
-    P.push_back({30, -200});
-    P.push_back({30, -300});
+vector<Vertex> get_polygon_c() {
+    vector<Vertex> P;
+    P.push_back(Vertex(700, -300, NONE));
+    P.push_back(Vertex(700, 300, NONE));
+    P.push_back(Vertex(30, 300, NONE));
+    P.push_back(Vertex(30, 200, NONE));
+    P.push_back(Vertex(650, 200, NONE));
+    P.push_back(Vertex(650, -200, NONE));
+    P.push_back(Vertex(30, -200, NONE));
+    P.push_back(Vertex(30, -300, NONE));
     return P;
 }
-
 
 // draws the polygon P
 void draw_polygon(vector<pair<int,int>> P, float r, float g, float b) {
@@ -191,14 +208,29 @@ void draw_polygon(vector<pair<int,int>> P, float r, float g, float b) {
     }
 }
 
-void draw_polygon_weiler(vector<pair<int,int>> P, vector<bool> is_in_out, float r, float g, float b, float r_w, float g_w, float b_w) {
-    for(int i = 0; i < P.size(); i++){ 
-        if(is_in_out[(i+1)%P.size()])
-            glColor3f(r_w, g_w, b_w);
-        else
-            glColor3f(r, g, b);
-        draw_line(P[i], P[(i+1)%P.size()]);
+// draws the polygon P
+void draw_polygon_weiler(vector<Vertex> P, float r, float g, float b) {
+    glColor3f(r, g, b);
+    int i = 0;
+    int hook = -1;
+    while(i != hook) {
+        cout << P[i].x << "," << P[i].y << "," << P[i].type << endl;
+        if(P[i].type == OUT_IN) {
+            hook = hook == -1 ? i : hook;
+            Vertex start = P[i];
+            do {
+                draw_line({P[i].x, P[i].y}, {P[(i+1)%P.size()].x, P[(i+1)%P.size()].y});
+                i = (i+1)%P.size();
+                cout << P[i].x << "," << P[i].y << "," << P[i].type << endl;
+            } while(P[i].type != IN_OUT);
+            draw_line({P[i].x, P[i].y}, {start.x, start.y});
+        }
+        i = (i+1)%P.size();
     }
+    // for(int i = 0; i < P.size(); i++){ 
+    //     cout << P[i].x << "," << P[i].y << "," << P[i].type << endl;
+    //     draw_line({P[i].x, P[i].y}, {P[(i+1)%P.size()].x, P[(i+1)%P.size()].y});
+    // }
 }
 
 // returns true if the point is on the left side of 'e' edge
