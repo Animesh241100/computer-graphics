@@ -1,7 +1,8 @@
 // A simple OpenGL program that draws a car.
 
-#include "GL/freeglut.h"
-#include "GL/gl.h"
+#include <GL/freeglut.h>
+#include <GL/gl.h>
+#include <GLFW/glfw3.h>
 #include<math.h>
 #include<time.h>
 #include<utility>
@@ -9,13 +10,13 @@
 #include<vector>
 #include<unistd.h>
 
-const int MIN_CROWD = 1;
-const int MAX_CROWD = 4;
-
+#define M_SIZE 100
 using namespace std;
 
 void draw_life();
 void draw_image();
+void draw_start_button();
+void draw_auto_button();
 
 
 class GameBoard {
@@ -24,6 +25,7 @@ class GameBoard {
     int size_;
     GameBoard(int size);
     void GameBoardInit();
+    void GameBoardMouseInit();
     void GameBoardAutoInit();
     void TransitionToNextState();
     void DisplayBoard(); 
@@ -34,21 +36,28 @@ class GameBoard {
             cout << endl;
         }
     }
+    bool IsInRange(int i, int j);
 
   private:
     void CellNextState(int x, int y, vector<pair<int,int>> &death_row, vector<pair<int,int>> &birth_row);
     int get_live_count(int x, int y);
-    bool IsInRange(int i, int j);
     bool IsAlive(int i, int j);
     
 };
 
+const int MIN_CROWD = 1;
+const int MAX_CROWD = 4;
+bool is_input_mode = true;
+GameBoard Game = GameBoard(M_SIZE);
+
+void HandleMouseClick(int button, int state, int x, int y);
+void new_Fun();
 
 int main(int argc, char **argv) {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_SINGLE);
     glutInitWindowSize(1000, 1000);
-    glutInitWindowPosition(1000, 1000);
+    glutInitWindowPosition(0, 0);
     glutCreateWindow("Game Of Life!");
     glutDisplayFunc(draw_image);
     glutMainLoop();
@@ -61,33 +70,15 @@ void draw_image() {
     glClearColor(0.0, 0.0, 0.0, 0.0);
     glClear(GL_COLOR_BUFFER_BIT);
     glColor3f(0.8, 1.0, 1.0);
-    glOrtho(0, 100, 0, 100, 0, 100);
+    glOrtho(0, M_SIZE, 0, M_SIZE, 0, M_SIZE);
     draw_life();
 }
 
 void draw_life() {
-    GameBoard Game = GameBoard(100);
-    Game.GameBoardAutoInit();
-    glPointSize(12);
-    // int i = 0;
-    while(1) {
-        glBegin(GL_POINTS);
-        Game.DisplayBoard();       
-        // glVertex2d(1000+i, 1000+i);
-        // glVertex2d(1000+i, 90000-i);
-        // glVertex2d(90000-i, 1000+i);
-        // glVertex2d(90000-i, 90000-i);
-        // Game.print_mat();
-        usleep(40000);
-        Game.TransitionToNextState();
-        glEnd();
-        glFlush();
-        glClear(GL_COLOR_BUFFER_BIT);
-        // i += 50;
-    }
+    // Game.GameBoardInit();
+    glPointSize(10);
+    Game.GameBoardMouseInit();
 }
-
-
 
 
 
@@ -116,14 +107,80 @@ void GameBoard::GameBoardInit() {
 }
 
 void GameBoard::GameBoardAutoInit() {
-    int n = 10000;
+    int n = 1000;
     while(n--) {
-        int u = rand() % 100;
-        int v = rand() % 100;
+        int u = rand() % M_SIZE;
+        int v = rand() % M_SIZE;
         board_[u][v] = true;
     }
 }
 
+void GameBoard::GameBoardMouseInit() {
+    int n = 5;
+    // while(1) {
+        // cout << "h " << endl;
+        glutMouseFunc(HandleMouseClick);
+    // }
+}
+
+void HandleMouseClick(int button, int state, int x, int y) {
+    draw_start_button();
+    draw_auto_button();
+    int c_x = round((double)x * (double)(M_SIZE-1)/(double)(999)); // 199/999
+    int c_y = round((double)y * (double)(M_SIZE-1)/(double)(703)); // 199/703
+    // cout << button << " " << state << " " << c_x << " " << c_y << endl;
+    glColor3f(1.0, 0.4, 0.0);
+    glBegin(GL_POINTS);
+    glClear(GL_COLOR_BUFFER_BIT);
+    if(button == GLUT_LEFT_BUTTON && state == GLUT_UP) {
+        if(Game.IsInRange(c_x, c_y));
+            Game.board_[c_x][M_SIZE-1-c_y] = true; 
+        Game.DisplayBoard();       
+    }
+    glEnd();    
+    glFlush();
+    if(c_x > 80 && c_y <= 7){
+        Game.GameBoardAutoInit();
+        new_Fun();
+    }
+    else if(c_x <= 7 && c_y <= 7){
+        new_Fun();
+    }
+}
+
+void draw_start_button() {
+    glColor3f(0.0, 1.0, 0.0);
+    glBegin(GL_POLYGON);
+    glVertex2i(3,97);
+    glVertex2i(7,95);
+    glVertex2i(3,92);
+    glEnd();
+    glFlush();
+}
+
+void draw_auto_button() {
+    glColor3f(0.0, 0.0, 1.0);
+    glBegin(GL_POLYGON);
+    glVertex2i(88,92);
+    glVertex2i(97,92);
+    glVertex2i(97,97);
+    glVertex2i(88,97);
+    glEnd();
+    glFlush();
+}
+
+
+void new_Fun() {
+    while(1) {
+        glBegin(GL_POINTS);
+        Game.DisplayBoard();       
+        usleep(40000);
+        Game.TransitionToNextState();
+        glEnd();
+        glFlush();
+        glClear(GL_COLOR_BUFFER_BIT);
+    }
+}
 
 void GameBoard::TransitionToNextState() {
     vector<pair<int,int>> death_row;
@@ -148,12 +205,18 @@ void GameBoard::CellNextState(int x, int y, vector<pair<int,int>> &death_row, ve
 
 int GameBoard::get_live_count(int x, int y) {
     int live_count = 0;
-    for(int i = x - 1; i <= x + 1; i++) {
-        for(int j = y - 1; j <= y + 1; j++) {
-            if(!(i == x && j == y) && IsInRange(i, j) && IsAlive(i, j))
-                live_count++;
-        }
-    }
+    int prev_x = x == 0 ? size_ - 1 : x - 1;
+    int post_x = (x + 1) % size_;
+    int prev_y = y == 0 ? size_ - 1 : y - 1;
+    int post_y = (y + 1) % size_;
+    live_count = IsAlive(prev_x, prev_y) ? live_count + 1 : live_count;
+    live_count = IsAlive(x, prev_y) ? live_count + 1 : live_count;
+    live_count = IsAlive(post_x, prev_y) ? live_count + 1 : live_count;
+    live_count = IsAlive(prev_x, y) ? live_count + 1 : live_count;
+    live_count = IsAlive(post_x, y) ? live_count + 1 : live_count;
+    live_count = IsAlive(prev_x, post_y) ? live_count + 1 : live_count;
+    live_count = IsAlive(x, post_y) ? live_count + 1 : live_count;
+    live_count = IsAlive(post_x, post_y) ? live_count + 1 : live_count;
     return live_count;
 }
 
