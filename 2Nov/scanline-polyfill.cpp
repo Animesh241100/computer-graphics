@@ -12,8 +12,8 @@
 #include<algorithm>
 
 #define PI 3.14159     // Mathematical Constant PI
-#define SIDE 100
-#define MAX 200
+#define SIDE 800
+#define MAX 1000
 
 using namespace std;
 
@@ -24,11 +24,15 @@ class Cell {
     int x_min;
     int dx;
     int dy;
+    int sign;
+    int count;
     Cell(int y_max_, int x_min_, int dx_, int dy_) {
         this->x_min = x_min_;
         this->y_max = y_max_;
-        this->dx = dx_;
-        this->dy = dy_;
+        this->dx = abs(dx_);
+        this->dy = abs(dy_);
+        this->sign = (dx_*dy_ < 0) ? -1 : 1;
+        this->count = 0;
     }
 };
 
@@ -49,13 +53,14 @@ void remove_dead_entries(vector<Cell> &AET, int y);
 void draw_scan_line(vector<Cell> &AET, int y);
 void merge_bucket(map<int, vector<Cell>> &SET, int y, vector<Cell> &AET);
 bool AETComparator(const Cell C1,  const Cell C2);
-bool comparator(const Edge E1,  const Edge E2);
 map<int, vector<Cell>> get_sorted_edge_table(vector<Edge> boundary);
 Cell get_set_cell(Edge &edge);
 int get_y_min(map<int, vector<Cell>> &SET);
 vector<Edge> get_boundary();
 void draw_polygon(vector<Edge> P, float r, float g, float b);
-
+void get_updated_x(Cell &cell);
+void print_set(map<int, vector<Cell>> SET);
+void print_row(vector<Cell> &AET);
 
 void plot_point(int x1, int y1);
 void draw_line(pair<float,float> src, pair<float,float> dest);
@@ -74,6 +79,7 @@ int main(int argc, char **argv) {
     return 0;
 }
 
+// draw the overall image
 void draw_image() {
     glClearColor(1.0, 1.0, 1.0, 0.4);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -82,11 +88,11 @@ void draw_image() {
         vector<Edge> boundary = get_boundary();
         draw_polygon(boundary, 0.0, 0.0, 1.0);
         glFlush();
-        // sleep(1);
         scanline_poly_fill(boundary);
     glFlush();
 }
 
+// iterates the scanline polyfill region filling algorithm inside the polygon boundary 'boundary'
 void scanline_poly_fill(vector<Edge> boundary) {
     map<int, vector<Cell>> SET = get_sorted_edge_table(boundary);
     int y = get_y_min(SET);
@@ -98,32 +104,46 @@ void scanline_poly_fill(vector<Edge> boundary) {
         y++;
         remove_dead_entries(AET, y);
         update_x_values(AET, y);
-    } while(!AET.empty());
+        usleep(5000);
+    } while(!AET.empty() || (SET.find(y) != SET.end()));
 }
 
+// update all the Cells in the AET with respect to the new scanline
 void update_x_values(vector<Cell> &AET, int y) {
     for(auto &cell : AET) {
         if(cell.dx != 0) { // non vertical edge
-            cell.x_min += (float)cell.dx / (float)cell.dy;
+            get_updated_x(cell);
         }
     }
 }
 
-void remove_dead_entries(vector<Cell> &AET, int y) {
-    vector<int> idxes;
-    for(int i = 0; i < AET.size(); i++) {
-        if(AET[i].y_max == y)
-            idxes.push_back(i);
+// update the x_min value with respect to the integer arithmetic based algorithm
+void get_updated_x(Cell &cell) {
+    int d_counter = min(cell.dx, cell.dy);
+    cell.count += d_counter;
+    if(cell.count >= cell.dy) {
+        cell.count -= cell.dy;
+        cell.x_min += cell.sign;
     }
-    for(int id : idxes)
-        AET.erase(AET.begin()+id);
 }
 
+// remove the entries for which the y_max is the same as the present scanline y
+void remove_dead_entries(vector<Cell> &AET, int y) {
+    if(AET[0].y_max == y) {
+        AET.erase(AET.begin());
+        AET.erase(AET.begin());
+    }
+}
+
+// draw the scanline 'y' with respect to the entries in the AET
 void draw_scan_line(vector<Cell> &AET, int y) {
+    if(AET.size() != 2)
+        return;
     for(int i = AET[0].x_min; i <= AET[1].x_min; i++)
         plot_point(i, y);
 }
 
+// merge the SET buckets for the scanline 'y' into the active edge table AET
 void merge_bucket(map<int, vector<Cell>> &SET, int y, vector<Cell> &AET) {
     auto it = SET.find(y);
     if(it == SET.end())
@@ -131,24 +151,19 @@ void merge_bucket(map<int, vector<Cell>> &SET, int y, vector<Cell> &AET) {
     AET.insert(AET.end(), it->second.begin(), it->second.end());
 }
 
+// A comparator to sort the active edge table AET
 bool AETComparator(const Cell C1,  const Cell C2) {
     return (C1.x_min < C2.x_min);
-}
-
-
-bool comparator(const Edge E1,  const Edge E2) {
-    int min1 = min(E1.A.second, E1.B.second);
-    int min2 = min(E2.A.second, E2.B.second);
-    return (min1 < min2);
 }
 
 // returns the sorted edge table with respect to the give polygon 'boundary'
 map<int, vector<Cell>> get_sorted_edge_table(vector<Edge> boundary) {
     map<int, vector<Cell>> SET;
-    // sort(boundary.begin(), boundary.end(), comparator);
     for(auto edge : boundary) {
         int y_min = min(edge.A.second, edge.B.second);
         Cell cell = get_set_cell(edge);
+        if(cell.dy == 0)
+            continue;
         auto it = SET.find(y_min);
         if(it != SET.end()) 
             it->second.push_back(cell);
@@ -163,12 +178,13 @@ map<int, vector<Cell>> get_sorted_edge_table(vector<Edge> boundary) {
 // returns the SET cell with respect to the given 'edge' object
 Cell get_set_cell(Edge &edge) {
     int y_max = max(edge.A.second, edge.B.second);
-    int x_min = min(edge.A.first, edge.B.first);
-    int dx = edge.A.second - edge.B.first;
-    int dy = edge.A.first - edge.B.second;
+    int x_min = edge.A.second < edge.B.second ? edge.A.first : edge.B.first;
+    int dx = edge.A.first - edge.B.first;
+    int dy = edge.A.second - edge.B.second;
     return Cell(y_max, x_min, dx, dy);
 }
 
+// returns the minimum y value(the lowest scanline) in the sorted edge table SET
 int get_y_min(map<int, vector<Cell>> &SET) {
     int y_min = (int)INFINITY;
     for(auto it : SET) {
@@ -198,7 +214,22 @@ void draw_polygon(vector<Edge> P, float r, float g, float b) {
     }
 }
 
+// prints the SET table
+void print_set(map<int, vector<Cell>> SET) {
+    for(auto it : SET) {
+        cout << it.first << ": ---[";
+        print_row(it.second);
+    }
+    cout << "\n\n";
+}
 
+// prints the AET table
+void print_row(vector<Cell> &AET){
+    for(auto cell : AET) {
+        cout << "(" << cell.y_max << "," << cell.x_min << "," << cell.dx << "," << cell.dy << "," << cell.sign << "), ";
+    }
+    cout << endl;
+}
 
 /********************************* Line Drawing Utility ******************************/
 
