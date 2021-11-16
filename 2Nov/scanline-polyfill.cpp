@@ -130,9 +130,16 @@ void get_updated_x(Cell &cell) {
 
 // remove the entries for which the y_max is the same as the present scanline y
 void remove_dead_entries(vector<Cell> &AET, int y) {
-    if(AET[0].y_max == y) {
-        AET.erase(AET.begin());
-        AET.erase(AET.begin());
+    while(1) {
+        int i = 0;
+        for(i = 0; i < AET.size(); i++) {
+            if(AET[i].y_max == y) {
+                AET.erase(AET.begin() + i);
+                break;
+            }
+        }
+        if(i == AET.size())
+            break;
     }
 }
 
