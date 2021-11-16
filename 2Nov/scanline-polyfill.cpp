@@ -36,6 +36,7 @@ class Cell {
     }
 };
 
+// Represnts an edge of a polygon
 class Edge {
   public:
     pair<int,int> A;
