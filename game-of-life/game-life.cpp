@@ -15,8 +15,8 @@ using namespace std;
 
 void draw_life();
 void draw_image();
-void draw_start_button();
-void draw_auto_button();
+void draw_start_button(float r, float g, float b);
+void draw_auto_button(float r, float g, float b);
 
 
 class GameBoard {
@@ -124,8 +124,8 @@ void GameBoard::GameBoardMouseInit() {
 }
 
 void HandleMouseClick(int button, int state, int x, int y) {
-    draw_start_button();
-    draw_auto_button();
+    draw_start_button(0.0, 1.0, 0.0);
+    draw_auto_button(0.0, 0.3, 1.0);
     int c_x = round((double)x * (double)(M_SIZE-1)/(double)(999)); // 199/999
     int c_y = round((double)y * (double)(M_SIZE-1)/(double)(703)); // 199/703
     // cout << button << " " << state << " " << c_x << " " << c_y << endl;
@@ -140,16 +140,20 @@ void HandleMouseClick(int button, int state, int x, int y) {
     glEnd();    
     glFlush();
     if(c_x > 80 && c_y <= 7){
+        draw_auto_button(0.0, 0.5, 0.9);
+        usleep(50000);
         Game.GameBoardAutoInit();
         new_Fun();
     }
     else if(c_x <= 7 && c_y <= 7){
+        draw_start_button(1.0, 1.0, 0.0);
+        usleep(50000);
         new_Fun();
     }
 }
 
-void draw_start_button() {
-    glColor3f(0.0, 1.0, 0.0);
+void draw_start_button(float r, float g, float b) {
+    glColor3f(r, g, b);
     glBegin(GL_POLYGON);
     glVertex2i(3,97);
     glVertex2i(7,95);
@@ -158,8 +162,8 @@ void draw_start_button() {
     glFlush();
 }
 
-void draw_auto_button() {
-    glColor3f(0.0, 0.0, 1.0);
+void draw_auto_button(float r, float g, float b) {
+    glColor3f(r, g, b);
     glBegin(GL_POLYGON);
     glVertex2i(88,92);
     glVertex2i(97,92);
@@ -171,10 +175,11 @@ void draw_auto_button() {
 
 
 void new_Fun() {
+    glColor3f(1.0, 0.4, 0.0);
     while(1) {
         glBegin(GL_POINTS);
         Game.DisplayBoard();       
-        usleep(40000);
+        usleep(4000);
         Game.TransitionToNextState();
         glEnd();
         glFlush();
