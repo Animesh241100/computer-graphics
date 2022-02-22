@@ -2,7 +2,8 @@
 
 
 
-![Illustration](./game-of-life.gif)
+<img src="./game-of-life.gif" width="600">
+<!-- ![Illustration]() -->
 
 ### For more details 
 If you want to know in detail about the project. [Click here](https://docs.google.com/presentation/d/1sF14Q_KVdXcDS9ZJpw0ALw_CKbzqLNxW0uIKXhLR_64/edit?usp=sharing)
@@ -14,7 +15,7 @@ Source code is written in C++ with the OpenGL graphics library to simulate the g
 
 ### How to execute?
 ```
-g++ Random_Point.cpp -lGL -lGLU -lglut -lGLEW -o RP
+g++ game-life.cpp -lGL -lGLU -lglut -lGLEW -o RP
 ```
 ```
 ./RP
